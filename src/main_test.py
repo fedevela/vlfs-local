@@ -2,9 +2,6 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
-# Point to the new src/ directory
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
 from main import main
 
 def test_main():

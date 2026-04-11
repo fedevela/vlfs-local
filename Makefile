@@ -10,11 +10,11 @@ run:
 
 test:
 	@echo "Running tests..."
-	uv run pytest tests/ packages/
+	uv run pytest src/ packages/
 
 coverage:
 	@echo "Running tests with coverage..."
-	uv run pytest --cov=packages/hello/src/hello --cov=packages/marco_polo/src/marco_polo --cov=src --cov-report=term-missing tests/ packages/
+	uv run pytest --cov=packages/hello/src/hello --cov=packages/marco_polo/src/marco_polo --cov=src --cov-report=term-missing src/ packages/
 
 clean:
 	@echo "Cleaning up..."
