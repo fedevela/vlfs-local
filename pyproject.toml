@@ -1,0 +1,21 @@
+[project]
+name = "llm_council_md_archiver"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "hello",
+    "marco-polo",
+]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+hello = { workspace = true }
+marco-polo = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-cov>=7.1.0",
+]
