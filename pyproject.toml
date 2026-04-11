@@ -22,3 +22,5 @@ dev = [
 
 [tool.pytest.ini_options]
 python_files = ["*.test.py"]
+pythonpath = ["src"]
+addopts = ["--import-mode=importlib"]

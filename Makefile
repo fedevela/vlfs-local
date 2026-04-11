@@ -10,11 +10,11 @@ run:
 
 test:
 	@echo "Running tests..."
-	PYTHONPATH=src uv run pytest --import-mode=importlib src/ packages/
+	uv run pytest src/ packages/
 
 coverage:
 	@echo "Running tests with coverage..."
-	PYTHONPATH=src uv run pytest --import-mode=importlib --cov=packages/hello/src --cov=packages/marco_polo/src --cov=src --cov-report=term-missing src/ packages/
+	uv run pytest --cov=packages/hello/src --cov=packages/marco_polo/src --cov=src --cov-report=term-missing src/ packages/
 
 clean:
 	@echo "Cleaning up..."
