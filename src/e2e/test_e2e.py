@@ -14,8 +14,8 @@ def setup_teardown_workspace(monkeypatch):
         shutil.rmtree(WORKSPACE_DIR)
     shutil.copytree(FIXTURE_DIR, WORKSPACE_DIR)
     
-    # Override the global WORKING_ROOT_DIR inside the vlfs_mcp module
-    monkeypatch.setattr(vlfs_mcp, "WORKING_ROOT_DIR", WORKSPACE_DIR)
+    # Set VLFS_ROOT_DIR so the config module uses the test workspace
+    monkeypatch.setenv("VLFS_ROOT_DIR", WORKSPACE_DIR)
     
     # Disable async ingestion thread for deterministic testing
     monkeypatch.setenv("VLFS_SYNC_ASYNC", "false")
