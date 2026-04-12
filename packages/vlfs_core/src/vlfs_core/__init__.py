@@ -132,25 +132,7 @@ def process_file(working_root_dir: str, filepath: str):
     with open(meta_filepath, 'w', encoding='utf-8') as f:
         yaml.dump(meta_data, f, default_flow_style=False)
 
-    # 4. State Snapshot
-    try:
-        subprocess.run(
-            ["git", "add", filepath, meta_filepath], 
-            cwd=working_root_dir, 
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        subprocess.run(
-            ["git", "commit", "-m", f"VLFS Auto-index sync: {base_filename}"], 
-            cwd=working_root_dir, 
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
-        print(f"Synchronized and committed: {base_filename}")
-    except subprocess.CalledProcessError as e:
-        print(f"Git commit failed (maybe no changes?): {e}")
+    print(f"Synchronized: {base_filename}")
 
 def sync_memories(working_root_dir: str):
     """Finds files that are newer than their .meta.yaml sidecars, or lack one."""
