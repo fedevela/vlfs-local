@@ -2,8 +2,9 @@ import os
 from fastmcp import FastMCP
 from vlfs_core import sync_memories, process_file
 
-# Hardcode the working directory to the project root (current working directory).
-WORKING_ROOT_DIR = os.getcwd()
+# Configure the working directory. It can be passed via environment variable VLFS_ROOT_DIR.
+# If not provided, it defaults to the directory from which the MCP server was launched.
+WORKING_ROOT_DIR = os.environ.get("VLFS_ROOT_DIR", os.getcwd())
 
 # Initialize FastMCP server
 mcp = FastMCP("vlfs-mcp")
