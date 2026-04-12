@@ -25,8 +25,8 @@ class LLMAdapter:
 
     def generate_summary(self, model: str, prompt: str) -> str:
         if self.local_dev_mode:
-            # We call the gemini-cli headless
-            cmd = ["gemini", "-m", model, "-p", prompt, "-o", "json"]
+            # We call the gemini-cli headless, letting it choose the default model
+            cmd = ["gemini", "-p", prompt, "-o", "json"]
             try:
                 # Capture stdout independently to avoid pollution from stderr logs
                 result = subprocess.run(cmd, capture_output=True, text=True, check=True)
