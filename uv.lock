@@ -746,6 +746,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "hello" },
     { name = "marco-polo" },
+    { name = "python-dotenv" },
     { name = "vlfs-core" },
     { name = "vlfs-mcp" },
 ]
@@ -760,6 +761,7 @@ dev = [
 requires-dist = [
     { name = "hello", editable = "packages/hello" },
     { name = "marco-polo", editable = "packages/marco_polo" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "vlfs-core", editable = "packages/vlfs_core" },
     { name = "vlfs-mcp", editable = "packages/vlfs_mcp" },
 ]

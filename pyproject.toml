@@ -5,6 +5,7 @@ requires-python = ">=3.12"
 dependencies = [
     "hello",
     "marco-polo",
+    "python-dotenv>=1.2.2",
     "vlfs-core",
     "vlfs-mcp",
 ]
