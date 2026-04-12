@@ -21,3 +21,6 @@ build/
 .history
 .gemini
 
+
+# VLFS E2E Artifacts
+.workspace/
