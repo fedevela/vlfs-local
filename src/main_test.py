@@ -11,6 +11,12 @@ def test_main_success():
         main()
         mock_run_mcp.assert_called_once()
 
+@patch.dict(os.environ, {"LOCAL_DEV_MODE": "true", "VLFS_ROOT_DIR": "/fake/dir"})
+def test_main_local_dev_mode_success():
+    with patch("main.run_mcp") as mock_run_mcp:
+        main()
+        mock_run_mcp.assert_called_once()
+
 @patch.dict(os.environ, {}, clear=True)
 def test_main_missing_env(capsys):
     with pytest.raises(SystemExit) as exc_info:

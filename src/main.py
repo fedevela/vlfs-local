@@ -11,8 +11,10 @@ from vlfs_mcp import run as run_mcp, mcp
 
 def main():
     # Validate required environment variables
+    local_dev_mode = os.environ.get("LOCAL_DEV_MODE", "false").lower() == "true"
+    
     missing_vars = []
-    if not os.environ.get("GEMINI_API_KEY"):
+    if not local_dev_mode and not os.environ.get("GEMINI_API_KEY"):
         missing_vars.append("GEMINI_API_KEY")
     if not os.environ.get("VLFS_ROOT_DIR"):
         missing_vars.append("VLFS_ROOT_DIR")
