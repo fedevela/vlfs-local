@@ -1,0 +1,23 @@
+[project]
+name = "vlfs-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Federico Vela", email = "fedevela@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=3.2.3",
+    "vlfs-core",
+]
+
+[project.scripts]
+vlfs-mcp = "vlfs_mcp:run"
+
+[build-system]
+requires = ["uv_build>=0.11.3,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+vlfs-core = { workspace = true }
