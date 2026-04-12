@@ -27,6 +27,10 @@ def ingest_memory_file(relative_filepath: str) -> str:
     Forces the ingestion and synchronization of a specific memory file.
     The filepath should be relative to the configured working root directory.
     """
+    base_name = os.path.basename(relative_filepath).lower()
+    if base_name in ("readme.md", "agents.md"):
+        return f"Skipped: {base_name} is excluded from VLFS ingestion."
+
     absolute_filepath = os.path.join(WORKING_ROOT_DIR, relative_filepath)
     if not os.path.exists(absolute_filepath):
         return f"Error: File not found at {absolute_filepath}"

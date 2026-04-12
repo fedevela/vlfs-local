@@ -83,6 +83,11 @@ def sync_memories(working_root_dir: str):
     
     processed_count = 0
     for md_path in md_files:
+        base_name = os.path.basename(md_path).lower()
+        # Explicitly skip README.md and AGENTS.md
+        if base_name in ("readme.md", "agents.md"):
+            continue
+
         meta_path = md_path[:-3] + ".meta.yaml"
         if not os.path.exists(meta_path) or os.path.getmtime(md_path) > os.path.getmtime(meta_path):
             print(f"Processing: {md_path}")
