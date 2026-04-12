@@ -12,15 +12,17 @@ from google import genai
 SUMMARY_MODEL = "gemini-2.5-flash"
 EMBEDDING_MODEL = "gemini-embedding-001"
 
+DB_FILENAME = "vlfs_index.db"
+
 def init_db(working_root_dir: str) -> sqlite3.Connection:
-    db_path = os.path.join(working_root_dir, "index.db")
+    db_path = os.path.join(working_root_dir, DB_FILENAME)
     db = sqlite3.connect(db_path)
     db.enable_load_extension(True)
     sqlite_vec.load(db)
     db.execute("""
         CREATE VIRTUAL TABLE IF NOT EXISTS vec_memories USING vec0(
             filepath TEXT,
-            embedding float[768]
+            embedding float[3072]
         );
     """)
     db.commit()
@@ -46,8 +48,13 @@ def process_file(working_root_dir: str, filepath: str):
     base_filename = os.path.basename(filepath)
     meta_filepath = filepath + ".meta.yaml"
     
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
+    print(f"DEBUG: Attempting to read and process {filepath}...")
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except UnicodeDecodeError as e:
+        print(f"ERROR: Cannot read {filepath} as UTF-8 text. It might be a binary file. Skipping. Details: {e}")
+        raise RuntimeError(f"Failed to read {filepath}: {e}")
 
     # 1. L1 Generation
     client = genai.Client()
@@ -68,7 +75,7 @@ def process_file(working_root_dir: str, filepath: str):
         for i, chunk_embedding in enumerate(embeddings):
             db.execute(
                 "INSERT INTO vec_memories(filepath, embedding) VALUES (?, ?)",
-                (rel_filepath, chunk_embedding.values)
+                (rel_filepath, sqlite_vec.serialize_float32(chunk_embedding.values))
             )
     db.commit()
     db.close()
@@ -85,8 +92,20 @@ def process_file(working_root_dir: str, filepath: str):
 
     # 4. State Snapshot
     try:
-        subprocess.run(["git", "add", filepath, meta_filepath], cwd=working_root_dir, check=True)
-        subprocess.run(["git", "commit", "-m", f"VLFS Auto-index sync: {base_filename}"], cwd=working_root_dir, check=True)
+        subprocess.run(
+            ["git", "add", filepath, meta_filepath], 
+            cwd=working_root_dir, 
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        subprocess.run(
+            ["git", "commit", "-m", f"VLFS Auto-index sync: {base_filename}"], 
+            cwd=working_root_dir, 
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
         print(f"Synchronized and committed: {base_filename}")
     except subprocess.CalledProcessError as e:
         print(f"Git commit failed (maybe no changes?): {e}")
@@ -98,6 +117,9 @@ def sync_memories(working_root_dir: str):
     
     processed_count = 0
     for file_path in all_files:
+        base_name = os.path.basename(file_path)
+        if base_name == DB_FILENAME:
+            continue
         if not os.path.isfile(file_path):
             continue
         if file_path.endswith(".meta.yaml"):

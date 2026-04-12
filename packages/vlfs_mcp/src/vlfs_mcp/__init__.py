@@ -1,6 +1,6 @@
 import os
 from fastmcp import FastMCP
-from vlfs_core import sync_memories, process_file, get_ignore_spec, is_ignored
+from vlfs_core import sync_memories, process_file, get_ignore_spec, is_ignored, DB_FILENAME
 
 # Configure the working directory. It can be passed via environment variable VLFS_ROOT_DIR.
 # If not provided, it defaults to the directory from which the MCP server was launched.
@@ -28,6 +28,10 @@ def ingest_memory_file(relative_filepath: str) -> str:
     Forces the ingestion and synchronization of a specific memory file.
     The filepath should be relative to the configured working root directory.
     """
+    base_name = os.path.basename(relative_filepath)
+    if base_name == DB_FILENAME:
+        return f"Skipped: {base_name} is the VLFS index database and cannot be ingested."
+
     absolute_filepath = os.path.join(WORKING_ROOT_DIR, relative_filepath)
     if not os.path.exists(absolute_filepath):
         return f"Error: File not found at {absolute_filepath}"
