@@ -12,7 +12,7 @@ mcp = FastMCP("vlfs-mcp")
 @mcp.tool()
 def sync_all_memories() -> str:
     """
-    Scans the configured working directory for any new or modified Markdown (.md) memory files
+    Scans the configured working directory for any new or modified memory files
     and synchronizes them into the VLFS state, generating abstracts and vector embeddings.
     """
     try:

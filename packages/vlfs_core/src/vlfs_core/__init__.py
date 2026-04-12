@@ -44,7 +44,7 @@ def is_ignored(filepath: str, working_root_dir: str, spec: pathspec.PathSpec) ->
 
 def process_file(working_root_dir: str, filepath: str):
     base_filename = os.path.basename(filepath)
-    meta_filepath = filepath[:-3] + ".meta.yaml"
+    meta_filepath = filepath + ".meta.yaml"
     
     with open(filepath, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -92,19 +92,23 @@ def process_file(working_root_dir: str, filepath: str):
         print(f"Git commit failed (maybe no changes?): {e}")
 
 def sync_memories(working_root_dir: str):
-    """Finds .md files that are newer than their .meta.yaml sidecars, or lack one."""
-    md_files = glob.glob(os.path.join(working_root_dir, "**", "*.md"), recursive=True)
+    """Finds files that are newer than their .meta.yaml sidecars, or lack one."""
+    all_files = glob.glob(os.path.join(working_root_dir, "**", "*"), recursive=True)
     spec = get_ignore_spec(working_root_dir)
     
     processed_count = 0
-    for md_path in md_files:
-        if is_ignored(md_path, working_root_dir, spec):
+    for file_path in all_files:
+        if not os.path.isfile(file_path):
+            continue
+        if file_path.endswith(".meta.yaml"):
+            continue
+        if is_ignored(file_path, working_root_dir, spec):
             continue
             
-        meta_path = md_path[:-3] + ".meta.yaml"
-        if not os.path.exists(meta_path) or os.path.getmtime(md_path) > os.path.getmtime(meta_path):
-            print(f"Processing: {md_path}")
-            process_file(working_root_dir, md_path)
+        meta_path = file_path + ".meta.yaml"
+        if not os.path.exists(meta_path) or os.path.getmtime(file_path) > os.path.getmtime(meta_path):
+            print(f"Processing: {file_path}")
+            process_file(working_root_dir, file_path)
             processed_count += 1
             
     if processed_count == 0:
