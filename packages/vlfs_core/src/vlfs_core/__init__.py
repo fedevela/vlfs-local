@@ -10,7 +10,7 @@ from datetime import datetime
 from google import genai
 
 SUMMARY_MODEL = "gemini-2.5-flash"
-EMBEDDING_MODEL = "text-embedding-004"
+EMBEDDING_MODEL = "gemini-embedding-001"
 
 def init_db(working_root_dir: str) -> sqlite3.Connection:
     db_path = os.path.join(working_root_dir, "index.db")

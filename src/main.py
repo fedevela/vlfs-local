@@ -7,7 +7,7 @@ env_path = os.path.join(os.getcwd(), ".env")
 if os.path.exists(env_path):
     load_dotenv(dotenv_path=env_path)  # pragma: no cover
 
-from vlfs_mcp import run as run_mcp
+from vlfs_mcp import run as run_mcp, mcp
 
 def main():
     # Validate required environment variables

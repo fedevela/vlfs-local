@@ -4,7 +4,8 @@ from vlfs_core import sync_memories, process_file, get_ignore_spec, is_ignored
 
 # Configure the working directory. It can be passed via environment variable VLFS_ROOT_DIR.
 # If not provided, it defaults to the directory from which the MCP server was launched.
-WORKING_ROOT_DIR = os.environ.get("VLFS_ROOT_DIR", os.getcwd())
+# We use expanduser to ensure paths like ~/Documents/... are resolved correctly.
+WORKING_ROOT_DIR = os.path.abspath(os.path.expanduser(os.environ.get("VLFS_ROOT_DIR", os.getcwd())))
 
 # Initialize FastMCP server
 mcp = FastMCP("vlfs-mcp")
