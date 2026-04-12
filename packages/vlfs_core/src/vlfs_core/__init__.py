@@ -8,11 +8,50 @@ import sqlite_vec
 import pathspec
 from datetime import datetime
 from google import genai
+import json
 
 SUMMARY_MODEL = "gemini-2.5-flash"
 EMBEDDING_MODEL = "gemini-embedding-001"
 
 DB_FILENAME = "vlfs_index.db"
+
+class LLMAdapter:
+    """A simple adapter to toggle between the google-genai SDK and the gemini-cli."""
+    
+    def __init__(self, use_cli: bool = False):
+        self.use_cli = use_cli
+        if not self.use_cli:
+            self.client = genai.Client()
+
+    def generate_summary(self, model: str, prompt: str) -> str:
+        if self.use_cli:
+            # We call the gemini-cli headless
+            cmd = ["gemini", "-m", model, "-p", prompt, "-o", "json"]
+            try:
+                # Capture stdout independently to avoid pollution from stderr logs
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                # Find the first '{' to parse the json, since there might be preamble logs
+                stdout = result.stdout
+                json_start = stdout.find('{')
+                if json_start != -1:
+                    data = json.loads(stdout[json_start:])
+                    return data.get("response", "Summary unavailable.").strip()
+                return "Summary unavailable."
+            except Exception as e:
+                print(f"gemini-cli generation failed: {e}")
+                return "Summary unavailable."
+        else:
+            response = self.client.models.generate_content(model=model, contents=prompt)
+            return response.text.strip() if response.text else "Summary unavailable."
+
+    def embed_content(self, model: str, contents: list[str]):
+        """Embeddings are strictly handled by the SDK as the CLI focuses on generation."""
+        if self.use_cli:
+            # Fallback to SDK for embeddings anyway, since the CLI doesn't support it directly
+            client = genai.Client()
+            return client.models.embed_content(model=model, contents=contents)
+        else:
+            return self.client.models.embed_content(model=model, contents=contents)
 
 def init_db(working_root_dir: str) -> sqlite3.Connection:
     db_path = os.path.join(working_root_dir, DB_FILENAME)
@@ -56,11 +95,13 @@ def process_file(working_root_dir: str, filepath: str):
         print(f"ERROR: Cannot read {filepath} as UTF-8 text. It might be a binary file. Skipping. Details: {e}")
         raise RuntimeError(f"Failed to read {filepath}: {e}")
 
+    # Initialize Adapter
+    use_cli = os.environ.get("USE_GEMINI_CLI", "false").lower() == "true"
+    adapter = LLMAdapter(use_cli=use_cli)
+
     # 1. L1 Generation
-    client = genai.Client()
     summary_prompt = f"Provide a 1-2 sentence abstract of the following text:\n\n{content[:2000]}"
-    response = client.models.generate_content(model=SUMMARY_MODEL, contents=summary_prompt)
-    abstract = response.text.strip() if response.text else "Summary unavailable."
+    abstract = adapter.generate_summary(model=SUMMARY_MODEL, prompt=summary_prompt)
 
     # 2. Vector Sync (Delete-and-Replace)
     db = init_db(working_root_dir)
@@ -69,7 +110,7 @@ def process_file(working_root_dir: str, filepath: str):
     
     chunks = chunk_text(content)
     if chunks:
-        embed_response = client.models.embed_content(model=EMBEDDING_MODEL, contents=chunks)
+        embed_response = adapter.embed_content(model=EMBEDDING_MODEL, contents=chunks)
         embeddings = embed_response.embeddings
         
         for i, chunk_embedding in enumerate(embeddings):
