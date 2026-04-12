@@ -1,13 +1,21 @@
 import os
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 from vlfs_core import sync_memories, process_file
-
-# Initialize FastMCP server
-mcp = FastMCP("vlfs-mcp")
 
 # Configure the working directory. It can be passed via environment variable VLFS_ROOT_DIR.
 # If not provided, it defaults to the directory from which the MCP server was launched.
 WORKING_ROOT_DIR = os.environ.get("VLFS_ROOT_DIR", os.getcwd())
+
+# Load environment variables (like GEMINI_API_KEY) from a .env file in the working directory
+env_path = os.path.join(WORKING_ROOT_DIR, ".env")
+if os.path.exists(env_path):
+    load_dotenv(dotenv_path=env_path)
+else:
+    load_dotenv() # Fallback to standard location
+
+# Initialize FastMCP server
+mcp = FastMCP("vlfs-mcp")
 
 @mcp.tool()
 def sync_all_memories() -> str:

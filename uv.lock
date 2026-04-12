@@ -1482,12 +1482,14 @@ version = "0.1.0"
 source = { editable = "packages/vlfs_mcp" }
 dependencies = [
     { name = "fastmcp" },
+    { name = "python-dotenv" },
     { name = "vlfs-core" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "fastmcp", specifier = ">=3.2.3" },
+    { name = "python-dotenv", specifier = ">=1.2.2" },
     { name = "vlfs-core", editable = "packages/vlfs_core" },
 ]
 
