@@ -54,4 +54,20 @@ def test_e2e_vlfs_lifecycle():
     print(f"      Read Result: {read_result}")
     assert read_result == "This is an e2e test reflection."
     
+    # 5. Targeted File Ingestion
+    print("[5/6] Testing Targeted File Ingestion...")
+    new_file_path = os.path.join(WORKSPACE_DIR, "targeted.md")
+    with open(new_file_path, "w") as f:
+        f.write("A newly created file to test specific ingestion.")
+    ingest_result = vlfs_mcp.ingest_memory_file("targeted.md")
+    print(f"      Ingest Result: {ingest_result}")
+    assert "Successfully ingested" in ingest_result
+    
+    # 6. L1 Semantic Search
+    print("[6/6] Testing L1 Semantic Search...")
+    semantic_result = vlfs_mcp.search_l1_semantic("ultimate answer to life", limit=2)
+    print(f"      Semantic Result:\n{semantic_result}")
+    assert "Top" in semantic_result
+    assert "predictable_concept.md" in semantic_result
+    
     print("--- E2E VLFS Lifecycle Test Completed Successfully ---\n")
