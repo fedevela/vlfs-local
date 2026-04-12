@@ -16,15 +16,15 @@ EMBEDDING_MODEL = "gemini-embedding-001"
 DB_FILENAME = "vlfs_index.db"
 
 class LLMAdapter:
-    """A simple adapter to toggle between the google-genai SDK and the gemini-cli."""
+    """A simple adapter to toggle between the google-genai SDK and the local dev tools."""
     
-    def __init__(self, use_cli: bool = False):
-        self.use_cli = use_cli
-        if not self.use_cli:
+    def __init__(self, local_dev_mode: bool = False):
+        self.local_dev_mode = local_dev_mode
+        if not self.local_dev_mode:
             self.client = genai.Client()
 
     def generate_summary(self, model: str, prompt: str) -> str:
-        if self.use_cli:
+        if self.local_dev_mode:
             # We call the gemini-cli headless
             cmd = ["gemini", "-m", model, "-p", prompt, "-o", "json"]
             try:
@@ -44,24 +44,25 @@ class LLMAdapter:
             response = self.client.models.generate_content(model=model, contents=prompt)
             return response.text.strip() if response.text else "Summary unavailable."
 
-    def embed_content(self, model: str, contents: list[str]):
-        """Embeddings are strictly handled by the SDK as the CLI focuses on generation."""
-        if self.use_cli:
-            # Fallback to SDK for embeddings anyway, since the CLI doesn't support it directly
-            client = genai.Client()
-            return client.models.embed_content(model=model, contents=contents)
+    def embed_content(self, model: str, contents: list[str]) -> list[list[float]]:
+        """Returns a unified list of float arrays."""
+        if self.local_dev_mode:
+            import ollama
+            response = ollama.embed(model='nomic-embed-text', input=contents)
+            return response['embeddings']
         else:
-            return self.client.models.embed_content(model=model, contents=contents)
+            response = self.client.models.embed_content(model=model, contents=contents)
+            return [emb.values for emb in response.embeddings]
 
-def init_db(working_root_dir: str) -> sqlite3.Connection:
+def init_db(working_root_dir: str, embedding_dim: int = 3072) -> sqlite3.Connection:
     db_path = os.path.join(working_root_dir, DB_FILENAME)
     db = sqlite3.connect(db_path)
     db.enable_load_extension(True)
     sqlite_vec.load(db)
-    db.execute("""
+    db.execute(f"""
         CREATE VIRTUAL TABLE IF NOT EXISTS vec_memories USING vec0(
             filepath TEXT,
-            embedding float[3072]
+            embedding float[{embedding_dim}]
         );
     """)
     db.commit()
@@ -96,27 +97,27 @@ def process_file(working_root_dir: str, filepath: str):
         raise RuntimeError(f"Failed to read {filepath}: {e}")
 
     # Initialize Adapter
-    use_cli = os.environ.get("USE_GEMINI_CLI", "false").lower() == "true"
-    adapter = LLMAdapter(use_cli=use_cli)
+    local_dev_mode = os.environ.get("LOCAL_DEV_MODE", "false").lower() == "true"
+    adapter = LLMAdapter(local_dev_mode=local_dev_mode)
+    embedding_dim = 768 if local_dev_mode else 3072
 
     # 1. L1 Generation
     summary_prompt = f"Provide a 1-2 sentence abstract of the following text:\n\n{content[:2000]}"
     abstract = adapter.generate_summary(model=SUMMARY_MODEL, prompt=summary_prompt)
 
     # 2. Vector Sync (Delete-and-Replace)
-    db = init_db(working_root_dir)
+    db = init_db(working_root_dir, embedding_dim=embedding_dim)
     rel_filepath = os.path.relpath(filepath, working_root_dir)
     db.execute("DELETE FROM vec_memories WHERE filepath = ?", (rel_filepath,))
     
     chunks = chunk_text(content)
     if chunks:
-        embed_response = adapter.embed_content(model=EMBEDDING_MODEL, contents=chunks)
-        embeddings = embed_response.embeddings
+        embeddings = adapter.embed_content(model=EMBEDDING_MODEL, contents=chunks)
         
         for i, chunk_embedding in enumerate(embeddings):
             db.execute(
                 "INSERT INTO vec_memories(filepath, embedding) VALUES (?, ?)",
-                (rel_filepath, sqlite_vec.serialize_float32(chunk_embedding.values))
+                (rel_filepath, sqlite_vec.serialize_float32(chunk_embedding))
             )
     db.commit()
     db.close()
