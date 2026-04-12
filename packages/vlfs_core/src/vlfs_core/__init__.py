@@ -79,15 +79,10 @@ def process_file(working_root_dir: str, filepath: str):
 
 def sync_memories(working_root_dir: str):
     """Finds .md files that are newer than their .meta.yaml sidecars, or lack one."""
-    md_files = glob.glob(os.path.join(working_root_dir, "**", "*.md"), recursive=True)
+    md_files = glob.glob(os.path.join(working_root_dir, "*.md"))
     
     processed_count = 0
     for md_path in md_files:
-        base_name = os.path.basename(md_path).lower()
-        # Explicitly skip README.md and AGENTS.md
-        if base_name in ("readme.md", "agents.md"):
-            continue
-
         meta_path = md_path[:-3] + ".meta.yaml"
         if not os.path.exists(meta_path) or os.path.getmtime(md_path) > os.path.getmtime(meta_path):
             print(f"Processing: {md_path}")
