@@ -5,6 +5,7 @@ import subprocess
 import yaml
 import sqlite3
 import sqlite_vec
+import pathspec
 from datetime import datetime
 from google import genai
 
@@ -27,6 +28,19 @@ def init_db(working_root_dir: str) -> sqlite3.Connection:
 
 def chunk_text(text: str, chunk_size: int = 1000) -> list[str]:
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+
+def get_ignore_spec(working_root_dir: str):
+    gitignore_path = os.path.join(working_root_dir, ".gitignore")
+    if os.path.exists(gitignore_path):
+        with open(gitignore_path, "r", encoding="utf-8") as f:
+            return pathspec.PathSpec.from_lines(pathspec.patterns.GitWildMatchPattern, f)
+    return None
+
+def is_ignored(filepath: str, working_root_dir: str, spec: pathspec.PathSpec) -> bool:
+    if not spec:
+        return False
+    rel_path = os.path.relpath(filepath, working_root_dir)
+    return spec.match_file(rel_path)
 
 def process_file(working_root_dir: str, filepath: str):
     base_filename = os.path.basename(filepath)
@@ -79,10 +93,14 @@ def process_file(working_root_dir: str, filepath: str):
 
 def sync_memories(working_root_dir: str):
     """Finds .md files that are newer than their .meta.yaml sidecars, or lack one."""
-    md_files = glob.glob(os.path.join(working_root_dir, "*.md"))
+    md_files = glob.glob(os.path.join(working_root_dir, "**", "*.md"), recursive=True)
+    spec = get_ignore_spec(working_root_dir)
     
     processed_count = 0
     for md_path in md_files:
+        if is_ignored(md_path, working_root_dir, spec):
+            continue
+            
         meta_path = md_path[:-3] + ".meta.yaml"
         if not os.path.exists(meta_path) or os.path.getmtime(md_path) > os.path.getmtime(meta_path):
             print(f"Processing: {md_path}")

@@ -1,6 +1,6 @@
 import os
 from fastmcp import FastMCP
-from vlfs_core import sync_memories, process_file
+from vlfs_core import sync_memories, process_file, get_ignore_spec, is_ignored
 
 # Configure the working directory. It can be passed via environment variable VLFS_ROOT_DIR.
 # If not provided, it defaults to the directory from which the MCP server was launched.
@@ -30,6 +30,10 @@ def ingest_memory_file(relative_filepath: str) -> str:
     absolute_filepath = os.path.join(WORKING_ROOT_DIR, relative_filepath)
     if not os.path.exists(absolute_filepath):
         return f"Error: File not found at {absolute_filepath}"
+        
+    spec = get_ignore_spec(WORKING_ROOT_DIR)
+    if is_ignored(absolute_filepath, WORKING_ROOT_DIR, spec):
+        return f"Skipped: {relative_filepath} is ignored by .gitignore."
         
     try:
         process_file(WORKING_ROOT_DIR, absolute_filepath)
