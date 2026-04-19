@@ -4,10 +4,13 @@ from .config import get_storage_paths
 def resolve_viking_uri(uri: str) -> str:
     """
     Resolves a viking:// URI to an absolute filesystem path based on configured storage roots.
+    Returns 'VIRTUAL_ROOT' if the exact root URI is requested.
     """
     paths = get_storage_paths()
     
-    if uri.startswith("viking://resources/"):
+    if uri == "viking://":
+        return "VIRTUAL_ROOT"
+    elif uri.startswith("viking://resources/"):
         rel_path = uri.replace("viking://resources/", "", 1)
         return os.path.abspath(os.path.join(paths["workspace"], rel_path))
     elif uri.startswith("viking://user/memories/"):
@@ -16,11 +19,11 @@ def resolve_viking_uri(uri: str) -> str:
     elif uri.startswith("viking://skills/"):
         rel_path = uri.replace("viking://skills/", "", 1)
         return os.path.abspath(os.path.join(paths["skills"], rel_path))
-    elif uri.startswith("viking://"):
-        rel_path = uri.replace("viking://", "", 1)
-        return os.path.abspath(os.path.join(paths["workspace"], rel_path))
     else:
-        # Not a viking URI, treat as relative to resources
+        # Not a known viking root, treat as relative to resources for backward compatibility
+        if uri.startswith("viking://"):
+            rel_path = uri.replace("viking://", "", 1)
+            return os.path.abspath(os.path.join(paths["workspace"], rel_path))
         return os.path.abspath(os.path.join(paths["workspace"], uri))
 
 def uri_from_path(abs_path: str) -> str:

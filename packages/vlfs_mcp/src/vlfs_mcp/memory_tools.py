@@ -10,7 +10,8 @@ from .utils import resolve_viking_uri, uri_from_path
 
 def memory_recall(query: str, limit: int = 3, targetUri: str = None, scoreThreshold: float = 0.0) -> str:
     """
-    Searches the long-term viking:// memory partitions and injects the L1/L2 results into the context window.
+    L1 Layer (Scanning & Routing): Semantic vector search (ov find).
+    Queries the vector database and returns generated L1 Summaries. Use this to 'fuzzy search' concepts without committing to a deep read.
     """
     working_root_dir = get_working_root_dir()
     try:
@@ -199,3 +200,11 @@ def memory_sync(targetUri: str = "viking://resources/") -> str:
         return f"Successfully synchronized {count} memories in {targetUri}."
     except Exception as e:
         return f"Error synchronizing memories: {str(e)}"
+
+# Alias to match the 'ov find' semantic verb perfectly
+def memory_find(query: str, limit: int = 3, targetUri: str = None, scoreThreshold: float = 0.0) -> str:
+    """
+    L1 Layer (Scanning & Routing): Semantic vector search (ov find).
+    Queries the vector database and returns generated L1 Summaries. Use this to 'fuzzy search' concepts without committing to a deep read.
+    """
+    return memory_recall(query, limit, targetUri, scoreThreshold)
