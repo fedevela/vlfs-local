@@ -1,19 +1,21 @@
 from fastmcp import FastMCP
 from .config import get_working_root_dir
-from .ingestion_tools import sync_all_memories, ingest_memory_file
-from .search_tools import search_l0_memory, search_l1_grep, search_l1_semantic
-from .l2_tools import save_l2_memory, read_l2_memory
+from .memory_tools import memory_recall, memory_store, memory_forget, memory_sync
+from .fs_tools import fs_ls, fs_grep
+from .resources import register_resources
 
 mcp = FastMCP("vlfs-mcp")
 
-mcp.tool()(sync_all_memories)
-mcp.tool()(ingest_memory_file)
-mcp.tool()(search_l0_memory)
-mcp.tool()(search_l1_grep)
-mcp.tool()(search_l1_semantic)
-mcp.tool()(save_l2_memory)
-mcp.tool()(read_l2_memory)
+mcp.tool()(memory_recall)
+mcp.tool()(memory_store)
+mcp.tool()(memory_forget)
+mcp.tool()(memory_sync)
+mcp.tool()(fs_ls)
+mcp.tool()(fs_grep)
+
+# Register native MCP resources
+register_resources(mcp)
 
 def run():
-    print(f"Starting VLFS MCP Server. Working root directory: {get_working_root_dir()}")
+    print(f"Starting VLFS MCP Server (OpenViking Standard). Working root directory: {get_working_root_dir()}")
     mcp.run()

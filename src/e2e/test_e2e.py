@@ -1,6 +1,7 @@
 import pytest
 import os
 import shutil
+from vlfs_core import sync_memories
 import vlfs_mcp
 
 E2E_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -22,52 +23,77 @@ def setup_teardown_workspace(monkeypatch):
     
     yield # Let the test run
 
-def test_e2e_vlfs_lifecycle():
-    print("\n--- Starting E2E VLFS Lifecycle Test ---")
+def test_e2e_openviking_lifecycle():
+    print("\n--- Starting E2E OpenViking Lifecycle Test ---")
     
-    # 1. Ingestion: Trigger L1 and L0 generation
-    print("[1/4] Triggering memory synchronization...")
-    sync_result = vlfs_mcp.sync_all_memories()
-    print(f"      Result: {sync_result}")
-    assert "Successfully synchronized" in sync_result
+    # 0. Pre-sync the fixture to ensure DB is initialized for recall across all 3 partitions
+    print("[0/6] Pre-syncing fixture partitions...")
+    sync_res = vlfs_mcp.memory_sync("viking://resources/")
+    assert "Successfully synchronized" in sync_res
     
-    # 2. L1 Abstract Search: Does the LLM follow the "42" instruction?
-    print("[2/4] Testing L1 Abstract Search (grep) for '42'...")
-    l1_result = vlfs_mcp.search_l1_grep("42")
-    print(f"      Result: {l1_result.strip()}")
-    assert "Found" in l1_result
-    assert "predictable_concept.md" in l1_result
+    sync_skills = vlfs_mcp.memory_sync("viking://skills/")
+    assert "Successfully synchronized" in sync_skills
     
-    # 3. L0 Raw Search: Posix find/grep for filename
-    print("[3/4] Testing L0 Raw Filename Search for 'predictable'...")
-    l0_result = vlfs_mcp.search_l0_memory("predictable")
-    print(f"      Result: {l0_result.strip()}")
-    assert "predictable_concept.md" in l0_result
+    sync_mems = vlfs_mcp.memory_sync("viking://user/memories/")
+    assert "Successfully synchronized" in sync_mems
+
+    # 1. FS LS Search (Directory Listing / Tree Traversal)
+    print("[1/6] Testing fs_ls across partitions...")
+    # Resources
+    fs_res = vlfs_mcp.fs_ls("viking://resources/", recursive=True)
+    assert "predictable_concept.md" in fs_res
     
-    # 4. L2 Reflection Lifecycle
-    print("[4/4] Testing L2 Reflection Lifecycle (save and read)...")
-    save_result = vlfs_mcp.save_l2_memory("test_reflection", "This is an e2e test reflection.", workspace_subpath="test_artifacts")
-    print(f"      Save Result: {save_result}")
-    assert "Successfully saved" in save_result
+    # Skills
+    fs_skills = vlfs_mcp.fs_ls("viking://skills/", recursive=True)
+    assert "test_skill.md" in fs_skills
     
-    read_result = vlfs_mcp.read_l2_memory("test_reflection", workspace_subpath="test_artifacts")
-    print(f"      Read Result: {read_result}")
-    assert read_result == "This is an e2e test reflection."
+    # Memories
+    fs_mems = vlfs_mcp.fs_ls("viking://user/memories/", recursive=True)
+    assert "old_memory.md" in fs_mems
+
+    # 2. FS Grep (Exact Text Search)
+    print("[2/6] Testing fs_grep across partitions...")
+    grep_res = vlfs_mcp.fs_grep("Meaning of Life", path="viking://resources/")
+    assert "predictable_concept.md" in grep_res
     
-    # 5. Targeted File Ingestion
-    print("[5/6] Testing Targeted File Ingestion...")
-    new_file_path = os.path.join(WORKSPACE_DIR, "targeted.md")
-    with open(new_file_path, "w") as f:
-        f.write("A newly created file to test specific ingestion.")
-    ingest_result = vlfs_mcp.ingest_memory_file("targeted.md")
-    print(f"      Ingest Result: {ingest_result}")
-    assert "Successfully ingested" in ingest_result
+    grep_skills = vlfs_mcp.fs_grep("supercalifragilisticexpialidocious", path="viking://skills/")
+    assert "test_skill.md" in grep_skills
     
-    # 6. L1 Semantic Search
-    print("[6/6] Testing L1 Semantic Search...")
-    semantic_result = vlfs_mcp.search_l1_semantic("ultimate answer to life", limit=2)
-    print(f"      Semantic Result:\n{semantic_result}")
-    assert "Top" in semantic_result
-    assert "predictable_concept.md" in semantic_result
+    grep_mems = vlfs_mcp.fs_grep("sky is blue", path="viking://user/memories/")
+    assert "old_memory.md" in grep_mems
+
+    # 3. Memory Store (Save New Context) across partitions
+    print("[3/6] Testing memory_store across partitions...")
+    store_mem = vlfs_mcp.memory_store("This is an e2e test reflection for OpenViking.", targetUri="viking://user/memories/test_session/mem.md")
+    assert "Successfully stored memory" in store_mem
     
-    print("--- E2E VLFS Lifecycle Test Completed Successfully ---\n")
+    store_skill = vlfs_mcp.memory_store("A new skill procedure.", targetUri="viking://skills/new_skill.md")
+    assert "Successfully stored memory" in store_skill
+    
+    store_res = vlfs_mcp.memory_store("A new document.", targetUri="viking://resources/new_doc.md")
+    assert "Successfully stored memory" in store_res
+    
+    # 4. Memory Recall (Semantic Search) across partitions
+    print("[4/6] Testing memory_recall across partitions...")
+    recall_mem = vlfs_mcp.memory_recall("test reflection", limit=2, targetUri="viking://user/memories/")
+    assert "Recall Results" in recall_mem
+    assert "test_session" in recall_mem
+    
+    recall_skill = vlfs_mcp.memory_recall("skill procedure", targetUri="viking://skills/")
+    assert "new_skill.md" in recall_skill
+    
+    recall_res = vlfs_mcp.memory_recall("new document", targetUri="viking://resources/")
+    assert "new_doc.md" in recall_res
+
+    # 5. Memory Forget (Delete Memory) across partitions
+    print("[5/6] Testing memory_forget across partitions...")
+    forget_mem = vlfs_mcp.memory_forget(query="test reflection", targetUri="viking://user/memories/")
+    assert "Successfully forgot" in forget_mem
+    
+    forget_skill = vlfs_mcp.memory_forget(uri="viking://skills/new_skill.md")
+    assert "Successfully forgot" in forget_skill
+    
+    forget_res = vlfs_mcp.memory_forget(uri="viking://resources/new_doc.md")
+    assert "Successfully forgot" in forget_res
+
+    print("--- E2E OpenViking Lifecycle Test Completed Successfully ---\n")

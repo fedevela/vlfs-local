@@ -9,9 +9,19 @@ def init_db(working_root_dir: str, embedding_dim: int = 3072) -> sqlite3.Connect
     db = sqlite3.connect(db_path)
     db.enable_load_extension(True)
     sqlite_vec.load(db)
+    
+    db.execute("""
+        CREATE TABLE IF NOT EXISTS memories_meta (
+            rowid INTEGER PRIMARY KEY AUTOINCREMENT,
+            filepath TEXT UNIQUE
+        );
+    """)
+    db.execute("""
+        CREATE INDEX IF NOT EXISTS idx_memories_meta_filepath ON memories_meta(filepath);
+    """)
+    
     db.execute(f"""
         CREATE VIRTUAL TABLE IF NOT EXISTS vec_memories USING vec0(
-            filepath TEXT,
             embedding float[{embedding_dim}]
         );
     """)

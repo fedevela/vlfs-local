@@ -9,6 +9,8 @@ from .llm import LLMAdapter
 from .db import init_db
 from .text import chunk_text
 from .ignore import get_ignore_spec, is_ignored
+from .config import get_storage_paths
+from .uri import uri_from_path
 
 def process_file(working_root_dir: str, filepath: str):
     base_filename = os.path.basename(filepath)
@@ -33,17 +35,22 @@ def process_file(working_root_dir: str, filepath: str):
 
     # 2. Vector Sync (Delete-and-Replace)
     db = init_db(working_root_dir, embedding_dim=embedding_dim)
-    rel_filepath = os.path.relpath(filepath, working_root_dir)
-    db.execute("DELETE FROM vec_memories WHERE filepath = ?", (rel_filepath,))
+    viking_uri = uri_from_path(filepath)
     
-    chunks = chunk_text(content)
-    if chunks:
-        embeddings = adapter.embed_content(model=EMBEDDING_MODEL, contents=chunks)
-        
-        for i, chunk_embedding in enumerate(embeddings):
+    db.execute("DELETE FROM vec_memories WHERE rowid IN (SELECT rowid FROM memories_meta WHERE filepath = ?)", (viking_uri,))
+    db.execute("DELETE FROM memories_meta WHERE filepath = ?", (viking_uri,))
+    
+    if abstract:
+        embeddings = adapter.embed_content(model=EMBEDDING_MODEL, contents=[abstract])
+        if embeddings:
+            import uuid
+            # Generate a random positive 63-bit integer to serve as unified rowid across tables
+            new_rowid = uuid.uuid4().int & ((1<<63)-1)
+            
+            db.execute("INSERT INTO memories_meta (rowid, filepath) VALUES (?, ?)", (new_rowid, viking_uri))
             db.execute(
-                "INSERT INTO vec_memories(filepath, embedding) VALUES (?, ?)",
-                (rel_filepath, sqlite_vec.serialize_float32(chunk_embedding))
+                "INSERT INTO vec_memories(rowid, embedding) VALUES (?, ?)",
+                (new_rowid, sqlite_vec.serialize_float32(embeddings[0]))
             )
     db.commit()
     db.close()
@@ -60,28 +67,42 @@ def process_file(working_root_dir: str, filepath: str):
 
     print(f"Synchronized: {base_filename}")
 
-def sync_memories(working_root_dir: str):
+def sync_memories(working_root_dir: str, target_dir: str = None):
     """Finds files that are newer than their .meta.yaml sidecars, or lack one."""
-    all_files = glob.glob(os.path.join(working_root_dir, "**", "*"), recursive=True)
+    paths = get_storage_paths()
+    if target_dir:
+        search_dirs = [target_dir]
+    else:
+        search_dirs = [paths["workspace"], paths["memories"], paths["skills"]]
+        
     spec = get_ignore_spec(working_root_dir)
-    
     processed_count = 0
-    for file_path in all_files:
-        base_name = os.path.basename(file_path)
-        if base_name == DB_FILENAME:
+    
+    for search_dir in search_dirs:
+        if not os.path.exists(search_dir):
             continue
-        if not os.path.isfile(file_path):
-            continue
-        if file_path.endswith(".meta.yaml"):
-            continue
-        if is_ignored(file_path, working_root_dir, spec):
-            continue
-            
-        meta_path = file_path + ".meta.yaml"
-        if not os.path.exists(meta_path) or os.path.getmtime(file_path) > os.path.getmtime(meta_path):
-            print(f"Processing: {file_path}")
-            process_file(working_root_dir, file_path)
-            processed_count += 1
+        all_files = glob.glob(os.path.join(search_dir, "**", "*"), recursive=True)
+        
+        for file_path in all_files:
+            # Prevent scanning .viking metadata directory when indexing the base workspace
+            if search_dir == paths["workspace"] and ".viking" in os.path.relpath(file_path, paths["workspace"]).split(os.sep):
+                continue
+                
+            base_name = os.path.basename(file_path)
+            if base_name == DB_FILENAME:
+                continue
+            if not os.path.isfile(file_path):
+                continue
+            if file_path.endswith(".meta.yaml"):
+                continue
+            if is_ignored(file_path, working_root_dir, spec):
+                continue
+                
+            meta_path = file_path + ".meta.yaml"
+            if not os.path.exists(meta_path) or os.path.getmtime(file_path) > os.path.getmtime(meta_path):
+                print(f"Processing: {file_path}")
+                process_file(working_root_dir, file_path)
+                processed_count += 1
             
     if processed_count == 0:
         print("No new or modified memories to sync.")
