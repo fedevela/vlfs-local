@@ -1,6 +1,6 @@
 # VLFS Local (OpenViking MCP)
 
-A local, lightweight, and powerful implementation of the **Virtualized Log-Structured File System (VLFS)** principles, adhering to the **OpenViking** standard. 
+A local, lightweight, and powerful implementation of the **Virtualized Log-Structured File System (VLFS)** principles, adhering to the [**OpenViking** standard](https://github.com/volcengine/OpenViking). 
 
 This project automatically turns your local workspace into a contextual **Model Context Protocol (MCP)** server. By simply running the server within your project, you empower any connected LLM agent with semantic memory, intelligent structural discovery, and isolated cognition layers.
 
