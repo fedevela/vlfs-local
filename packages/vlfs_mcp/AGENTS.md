@@ -5,7 +5,7 @@ This module is the **Agent Interface** of the Virtualized Log-Structured File Sy
 ## Domain Language
 
 - **MCP (Model Context Protocol)**: The standardized communication layer for exposing tools and resources to LLM agents.
-- **OpenViking Standard**: The architectural paradigm dictating the use of the `viking://` URI scheme to virtualize access to workspace context, memories, and skills.
+- **OpenViking Standard**: The architectural paradigm dictating the use of the `viking://` URI scheme to virtualize access to resources context, memories, and skills.
 - **Cognition Layer**: The `viking://user/memories/` partition where agents store long-term reflections and episodic context.
 - **L1/L2 Injection**: The process of returning summarized (L1) and detailed (L2/Markdown) content into the agent's context window during retrieval.
 
@@ -19,7 +19,7 @@ To prevent context window exhaustion, the OpenViking standard enforces a strict 
 
 - **`server.py`**: Bootstraps the `FastMCP` server, registers all tools and native resources, and acts as the entry point for the MCP host.
 - **`resources.py`**: Maps native OpenViking URIs to read-only MCP resources:
-  - `viking://resources/{domain}`: Exposes external, static knowledge from the workspace root.
+  - `viking://resources/{domain}`: Exposes external, static knowledge from the resources root.
   - `viking://user/memories/{session_id}`: Aggregates and exposes the cognition layer for a specific session.
   - `viking://skills/{tool_name}`: Exposes callable capabilities and static instructions.
 - **`memory_tools.py`**: Provides the cognition and retrieval toolset:

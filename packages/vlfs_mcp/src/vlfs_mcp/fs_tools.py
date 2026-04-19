@@ -2,7 +2,7 @@ import os
 import subprocess
 import shlex
 from vlfs_core import get_storage_paths
-from .config import get_working_root_dir
+from .config import get_resources_root_dir
 from .utils import resolve_viking_uri, uri_from_path
 
 def fs_ls(path: str, recursive: bool = False) -> str:
@@ -10,7 +10,7 @@ def fs_ls(path: str, recursive: bool = False) -> str:
     L0 Layer (Discovery & Metadata): Navigates the OpenViking virtual filesystem directory tree to discover available context.
     Returns structural map without loading context, respecting .gitignore.
     """
-    working_root_dir = get_working_root_dir()
+    working_root_dir = get_resources_root_dir()
     
     # Resolve the viking:// URI to an absolute local path
     target_path = resolve_viking_uri(path)
@@ -86,7 +86,7 @@ def fs_grep(query: str, path: str = "viking://resources/") -> str:
     L2 Layer (Exact Matching): Exact Text Search (Keyword matching) across the virtual filesystem.
     Utilizes grep to force a literal string search across raw text rather than relying on the L1 vector index.
     """
-    working_root_dir = get_working_root_dir()
+    working_root_dir = get_resources_root_dir()
     target_path = resolve_viking_uri(path)
     
     if target_path == "VIRTUAL_ROOT":
@@ -137,7 +137,7 @@ def fs_tree(path: str = "viking://resources/") -> str:
     L0 Layer (Discovery & Metadata): Returns the structural map of the directory tree.
     Uses minimal tokens to see file names and structure without loading content. Start here.
     """
-    working_root_dir = get_working_root_dir()
+    working_root_dir = get_resources_root_dir()
     target_path = resolve_viking_uri(path)
     
     if target_path == "VIRTUAL_ROOT":
@@ -208,7 +208,7 @@ def fs_cat(path: str) -> str:
     L2 Layer (Deep Reading): Forces the system to access and load the raw, unadulterated file contents into your context window.
     Use only when you have identified a specific file via L0/L1.
     """
-    working_root_dir = get_working_root_dir()
+    working_root_dir = get_resources_root_dir()
     target_path = resolve_viking_uri(path)
     
     if not target_path.startswith(working_root_dir):

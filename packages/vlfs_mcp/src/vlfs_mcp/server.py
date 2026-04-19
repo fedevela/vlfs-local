@@ -1,5 +1,5 @@
 from fastmcp import FastMCP
-from .config import get_working_root_dir
+from .config import get_resources_root_dir
 from .memory_tools import memory_recall, memory_store, memory_forget, memory_sync, memory_find
 from .fs_tools import fs_ls, fs_grep, fs_tree, fs_cat
 from .resources import register_resources
@@ -20,5 +20,5 @@ mcp.tool()(fs_cat)
 register_resources(mcp)
 
 def run():
-    print(f"Starting VLFS MCP Server (OpenViking Standard). Working root directory: {get_working_root_dir()}")
+    print(f"Starting VLFS MCP Server (OpenViking Standard). Working root directory: {get_resources_root_dir()}")
     mcp.run()

@@ -12,7 +12,7 @@ def resolve_viking_uri(uri: str) -> str:
         return "VIRTUAL_ROOT"
     elif uri.startswith("viking://resources/"):
         rel_path = uri.replace("viking://resources/", "", 1)
-        return os.path.abspath(os.path.join(paths["workspace"], rel_path))
+        return os.path.abspath(os.path.join(paths["resources"], rel_path))
     elif uri.startswith("viking://user/memories/"):
         rel_path = uri.replace("viking://user/memories/", "", 1)
         return os.path.abspath(os.path.join(paths["memories"], rel_path))
@@ -23,8 +23,8 @@ def resolve_viking_uri(uri: str) -> str:
         # Not a known viking root, treat as relative to resources for backward compatibility
         if uri.startswith("viking://"):
             rel_path = uri.replace("viking://", "", 1)
-            return os.path.abspath(os.path.join(paths["workspace"], rel_path))
-        return os.path.abspath(os.path.join(paths["workspace"], uri))
+            return os.path.abspath(os.path.join(paths["resources"], rel_path))
+        return os.path.abspath(os.path.join(paths["resources"], uri))
 
 def uri_from_path(abs_path: str) -> str:
     """
@@ -51,9 +51,9 @@ def uri_from_path(abs_path: str) -> str:
         except ValueError:
             pass
 
-    if abs_path.startswith(paths["workspace"]):
+    if abs_path.startswith(paths["resources"]):
         try:
-            rel = os.path.relpath(abs_path, paths["workspace"])
+            rel = os.path.relpath(abs_path, paths["resources"])
             if rel == ".":
                 return "viking://resources/"
             return "viking://resources/" + rel

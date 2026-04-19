@@ -11,7 +11,9 @@ def load_config() -> dict:
     config_path = os.path.abspath(DEFAULT_CONFIG_FILENAME)
     config = {
         "storage": {
-            "workspace": os.environ.get("VLFS_ROOT_DIR", os.getcwd())
+            "resources": os.environ.get("VLFS_RESOURCES_DIR", os.getcwd()),
+            "skills": os.environ.get("VLFS_SKILLS_DIR"),
+            "memories": os.environ.get("VLFS_MEMORIES_DIR")
         },
         "embedding": {
             "provider": os.environ.get("EMBEDDING_PROVIDER", "google"),
@@ -41,23 +43,26 @@ def load_config() -> dict:
             print(f"Warning: Failed to load {DEFAULT_CONFIG_FILENAME}: {e}")
             
     # Resolve storage paths
-    workspace = config["storage"].get("workspace", os.getcwd())
-    workspace_abs = os.path.abspath(os.path.expanduser(workspace))
-    config["storage"]["workspace"] = workspace_abs
+    resources = config["storage"].get("resources", os.getcwd())
+    resources_abs = os.path.abspath(os.path.expanduser(resources))
+    config["storage"]["resources"] = resources_abs
     
-    config["storage"]["memories"] = os.path.abspath(os.path.expanduser(
-        config["storage"].get("memories", os.path.join(workspace_abs, ".viking", "user", "memories"))
-    ))
+    # If env var provided None or empty string, fallback to default relative paths
+    memories_path = config["storage"].get("memories")
+    if not memories_path:
+        memories_path = os.path.join(resources_abs, ".viking", "user", "memories")
+    config["storage"]["memories"] = os.path.abspath(os.path.expanduser(memories_path))
     
-    config["storage"]["skills"] = os.path.abspath(os.path.expanduser(
-        config["storage"].get("skills", os.path.join(workspace_abs, ".viking", "skills"))
-    ))
+    skills_path = config["storage"].get("skills")
+    if not skills_path:
+        skills_path = os.path.join(resources_abs, ".viking", "skills")
+    config["storage"]["skills"] = os.path.abspath(os.path.expanduser(skills_path))
     
     return config
 
-def get_working_root_dir() -> str:
+def get_resources_root_dir() -> str:
     config = load_config()
-    return config["storage"]["workspace"]
+    return config["storage"]["resources"]
 
 def get_storage_paths() -> dict:
     return load_config()["storage"]

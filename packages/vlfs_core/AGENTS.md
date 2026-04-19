@@ -12,7 +12,7 @@ This module is the **Foundation** of the Virtualized Log-Structured File System 
 
 ## Core Objects & Modules
 
-- **`config.py`**: The central configuration loader. It reads `vlfs_config.json` with fallbacks to environment variables to resolve storage paths (`workspace`, `memories`, `skills`) and model providers.
+- **`config.py`**: The central configuration loader. It reads `vlfs_config.json` with fallbacks to environment variables to resolve storage paths (`resources`, `memories`, `skills`) and model providers.
 - **`db.py`**: Manages the `sqlite-vec` vector database connection (`vlfs_index.db`). It defines the schema for `memories_meta` (storing file URIs) and the virtual table `vec_memories` (storing L1 embeddings).
 - **`indexer.py`**: The ingestion engine.
   - `process_file`: Reads a file, generates an L1 abstract via the LLM, embeds the abstract, performs a delete-and-replace sync in the database, and writes the `.meta.yaml` sidecar.

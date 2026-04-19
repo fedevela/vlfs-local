@@ -5,7 +5,7 @@ import uuid
 import shlex
 import subprocess
 from vlfs_core import LLMAdapter, EMBEDDING_MODEL, DB_FILENAME, process_file, sync_memories
-from vlfs_core import get_working_root_dir, get_storage_paths
+from vlfs_core import get_resources_root_dir, get_storage_paths
 from .utils import resolve_viking_uri, uri_from_path
 
 def memory_recall(query: str, limit: int = 3, targetUri: str = None, scoreThreshold: float = 0.0) -> str:
@@ -13,7 +13,7 @@ def memory_recall(query: str, limit: int = 3, targetUri: str = None, scoreThresh
     L1 Layer (Scanning & Routing): Semantic vector search (ov find).
     Queries the vector database and returns generated L1 Summaries. Use this to 'fuzzy search' concepts without committing to a deep read.
     """
-    working_root_dir = get_working_root_dir()
+    working_root_dir = get_resources_root_dir()
     try:
         import sqlite_vec
     except ImportError:
@@ -106,7 +106,7 @@ def memory_store(text: str, targetUri: str) -> str:
     if targetUri.endswith("/"):
         return "Error: targetUri must specify a complete filename, not a directory."
         
-    working_root_dir = get_working_root_dir()
+    working_root_dir = get_resources_root_dir()
     filepath = resolve_viking_uri(targetUri)
     
     try:
@@ -151,7 +151,7 @@ def memory_forget(query: str = None, uri: str = None, targetUri: str = None, lim
             if targetUri:
                 search_paths.append(resolve_viking_uri(targetUri))
             else:
-                search_paths = [paths["workspace"], paths["memories"], paths["skills"]]
+                search_paths = [paths["resources"], paths["memories"], paths["skills"]]
             
             for search_path in search_paths:
                 if not os.path.exists(search_path):
@@ -189,7 +189,7 @@ def memory_sync(targetUri: str = "viking://resources/") -> str:
     Bulk Ingestion (Add local folders).
     Synchronizes the specified OpenViking URI, generating abstracts and vector embeddings for new or modified files.
     """
-    working_root_dir = get_working_root_dir()
+    working_root_dir = get_resources_root_dir()
     target_abs_path = resolve_viking_uri(targetUri)
         
     if not os.path.exists(target_abs_path):

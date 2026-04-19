@@ -73,7 +73,7 @@ def sync_memories(working_root_dir: str, target_dir: str = None):
     if target_dir:
         search_dirs = [target_dir]
     else:
-        search_dirs = [paths["workspace"], paths["memories"], paths["skills"]]
+        search_dirs = [paths["resources"], paths["memories"], paths["skills"]]
         
     spec = get_ignore_spec(working_root_dir)
     processed_count = 0
@@ -85,7 +85,7 @@ def sync_memories(working_root_dir: str, target_dir: str = None):
         
         for file_path in all_files:
             # Prevent scanning .viking metadata directory when indexing the base workspace
-            if search_dir == paths["workspace"] and ".viking" in os.path.relpath(file_path, paths["workspace"]).split(os.sep):
+            if search_dir == paths["resources"] and ".viking" in os.path.relpath(file_path, paths["resources"]).split(os.sep):
                 continue
                 
             base_name = os.path.basename(file_path)
