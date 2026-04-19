@@ -20,11 +20,7 @@ def resolve_viking_uri(uri: str) -> str:
         rel_path = uri.replace("viking://skills/", "", 1)
         return os.path.abspath(os.path.join(paths["skills"], rel_path))
     else:
-        # Not a known viking root, return error or handle as invalid
-        if uri.startswith("viking://"):
-            raise ValueError(f"Invalid or unknown viking URI partition: {uri}")
-        # If it doesn't start with viking://, assume it's a relative path to resources
-        return os.path.abspath(os.path.join(paths["resources"], uri))
+        raise ValueError(f"Invalid or unknown viking URI: {uri}")
 
 def uri_from_path(abs_path: str) -> str:
     """
