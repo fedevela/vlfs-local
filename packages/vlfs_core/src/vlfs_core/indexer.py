@@ -22,7 +22,7 @@ def process_file(working_root_dir: str, filepath: str):
             content = f.read()
     except UnicodeDecodeError as e:
         print(f"ERROR: Cannot read {filepath} as UTF-8 text. It might be a binary file. Skipping. Details: {e}")
-        raise RuntimeError(f"Failed to read {filepath}: {e}")
+        return
 
     # Initialize Adapter
     local_dev_mode = os.environ.get("LOCAL_DEV_MODE", "false").lower() == "true"
@@ -101,8 +101,11 @@ def sync_memories(working_root_dir: str, target_dir: str = None):
             meta_path = file_path + ".meta.yaml"
             if not os.path.exists(meta_path) or os.path.getmtime(file_path) > os.path.getmtime(meta_path):
                 print(f"Processing: {file_path}")
-                process_file(working_root_dir, file_path)
-                processed_count += 1
+                try:
+                    process_file(working_root_dir, file_path)
+                    processed_count += 1
+                except Exception as e:
+                    print(f"ERROR: Failed to process {file_path}. Skipping. Details: {e}")
             
     if processed_count == 0:
         print("No new or modified memories to sync.")
