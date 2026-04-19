@@ -15,11 +15,15 @@ def setup_teardown_workspace(monkeypatch):
         shutil.rmtree(WORKSPACE_DIR)
     shutil.copytree(FIXTURE_DIR, WORKSPACE_DIR)
     
-    # Set VLFS_ROOT_DIR so the config module uses the test workspace
-    monkeypatch.setenv("VLFS_ROOT_DIR", WORKSPACE_DIR)
+    # Set VLFS_RESOURCES_DIR so the config module uses the test workspace
+    monkeypatch.setenv("VLFS_RESOURCES_DIR", WORKSPACE_DIR)
     
     # Disable async ingestion thread for deterministic testing
     monkeypatch.setenv("VLFS_SYNC_ASYNC", "false")
+    
+    # Mock LLMAdapter to prevent network calls and hanging
+    monkeypatch.setattr("vlfs_core.llm.LLMAdapter.generate_summary", lambda self, model, prompt: "Mocked L1 abstract.")
+    monkeypatch.setattr("vlfs_core.llm.LLMAdapter.embed_content", lambda self, model, contents: [[0.1] * 768 for _ in contents])
     
     yield # Let the test run
 

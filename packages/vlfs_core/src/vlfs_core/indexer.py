@@ -37,23 +37,25 @@ def process_file(working_root_dir: str, filepath: str):
     db = init_db(working_root_dir, embedding_dim=embedding_dim)
     viking_uri = uri_from_path(filepath)
     
-    db.execute("DELETE FROM vec_memories WHERE rowid IN (SELECT rowid FROM memories_meta WHERE filepath = ?)", (viking_uri,))
-    db.execute("DELETE FROM memories_meta WHERE filepath = ?", (viking_uri,))
-    
-    if abstract:
-        embeddings = adapter.embed_content(model=EMBEDDING_MODEL, contents=[abstract])
-        if embeddings:
-            import uuid
-            # Generate a random positive 63-bit integer to serve as unified rowid across tables
-            new_rowid = uuid.uuid4().int & ((1<<63)-1)
-            
-            db.execute("INSERT INTO memories_meta (rowid, filepath) VALUES (?, ?)", (new_rowid, viking_uri))
-            db.execute(
-                "INSERT INTO vec_memories(rowid, embedding) VALUES (?, ?)",
-                (new_rowid, sqlite_vec.serialize_float32(embeddings[0]))
-            )
-    db.commit()
-    db.close()
+    try:
+        db.execute("DELETE FROM vec_memories WHERE rowid IN (SELECT rowid FROM memories_meta WHERE filepath = ?)", (viking_uri,))
+        db.execute("DELETE FROM memories_meta WHERE filepath = ?", (viking_uri,))
+        
+        if abstract:
+            embeddings = adapter.embed_content(model=EMBEDDING_MODEL, contents=[abstract])
+            if embeddings:
+                import uuid
+                # Generate a random positive 63-bit integer to serve as unified rowid across tables
+                new_rowid = uuid.uuid4().int & ((1<<63)-1)
+                
+                db.execute("INSERT INTO memories_meta (rowid, filepath) VALUES (?, ?)", (new_rowid, viking_uri))
+                db.execute(
+                    "INSERT INTO vec_memories(rowid, embedding) VALUES (?, ?)",
+                    (new_rowid, sqlite_vec.serialize_float32(embeddings[0]))
+                )
+        db.commit()
+    finally:
+        db.close()
 
     # 3. Sidecar Creation (Writing this last ensures its mtime > md's mtime)
     meta_data = {

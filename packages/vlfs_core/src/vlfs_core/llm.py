@@ -32,7 +32,7 @@ class LLMAdapter:
             # We call the gemini-cli headless, letting it choose the default model
             cmd = ["gemini", "-p", prompt, "-o", "json"]
             try:
-                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True, timeout=10)
                 stdout = result.stdout
                 json_start = stdout.find('{')
                 if json_start != -1:
