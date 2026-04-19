@@ -20,10 +20,10 @@ def resolve_viking_uri(uri: str) -> str:
         rel_path = uri.replace("viking://skills/", "", 1)
         return os.path.abspath(os.path.join(paths["skills"], rel_path))
     else:
-        # Not a known viking root, treat as relative to resources for backward compatibility
+        # Not a known viking root, return error or handle as invalid
         if uri.startswith("viking://"):
-            rel_path = uri.replace("viking://", "", 1)
-            return os.path.abspath(os.path.join(paths["resources"], rel_path))
+            raise ValueError(f"Invalid or unknown viking URI partition: {uri}")
+        # If it doesn't start with viking://, assume it's a relative path to resources
         return os.path.abspath(os.path.join(paths["resources"], uri))
 
 def uri_from_path(abs_path: str) -> str:
@@ -60,5 +60,5 @@ def uri_from_path(abs_path: str) -> str:
         except ValueError:
             pass
             
-    # Fallback if path doesn't match any configured root
-    return f"viking://resources/{abs_path}"
+    # If the path doesn't match any configured root, it is outside the virtual filesystem
+    raise ValueError(f"Path is outside of OpenViking partitions: {abs_path}")
