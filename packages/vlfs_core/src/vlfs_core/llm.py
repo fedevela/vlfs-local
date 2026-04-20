@@ -15,7 +15,14 @@ class LLMAdapter:
         self.google_client = None
         self.openai_client = None
 
-        if not self.local_dev_mode:
+        if self.local_dev_mode:
+            try:
+                import urllib.request
+                # Fail fast if Ollama is not running
+                urllib.request.urlopen("http://localhost:11434/", timeout=2)
+            except Exception:
+                raise ConnectionError("Ollama is not running. Local dev mode requires Ollama for embeddings.")
+        else:
             if self.vlm_provider == "google" or self.embedding_provider == "google":
                 from google import genai
                 self.google_client = genai.Client(api_key=self.config.get("vlm", {}).get("api_key", os.environ.get("GEMINI_API_KEY")))

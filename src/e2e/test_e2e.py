@@ -21,10 +21,6 @@ def setup_teardown_workspace(monkeypatch):
     # Disable async ingestion thread for deterministic testing
     monkeypatch.setenv("VLFS_SYNC_ASYNC", "false")
     
-    # Mock LLMAdapter to prevent network calls and hanging
-    monkeypatch.setattr("vlfs_core.llm.LLMAdapter.generate_summary", lambda self, model, prompt: "Mocked L1 abstract.")
-    monkeypatch.setattr("vlfs_core.llm.LLMAdapter.embed_content", lambda self, model, contents: [[0.1] * 768 for _ in contents])
-    
     yield # Let the test run
 
 def test_e2e_openviking_lifecycle():
